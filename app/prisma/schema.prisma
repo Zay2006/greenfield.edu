@@ -1,0 +1,178 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = "mysql://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+}
+
+model User {
+  id         Int       @id @default(autoincrement())
+  email      String    @unique
+  password   String
+  role       Role      @default(student)
+  status     UserStatus @default(active)
+  lastLogin  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  student    Student?
+}
+
+model Student {
+  id               Int       @id
+  user             User      @relation(fields: [id], references: [id], onDelete: Cascade)
+  studentId        String    @unique
+  fullName         String
+  dateOfBirth      DateTime?
+  enrollmentStatus EnrollmentStatus @default(pending)
+  academicYear     Int?
+  currentSemester  Int?
+  major           String?
+  gpa             Float?
+  totalCredits    Int       @default(0)
+  contactNumber   String?
+  address         String?   @db.Text
+  emergencyContact String?  @db.Text
+  documents       Json?
+  enrollments     Enrollment[]
+  notifications   Notification[]
+  documents_files Document[]
+}
+
+model Department {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  name      String
+  headId    Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  courses   Course[]
+}
+
+model Course {
+  id            Int      @id @default(autoincrement())
+  code          String   @unique
+  name          String
+  description   String?  @db.Text
+  departmentId  Int
+  department    Department @relation(fields: [departmentId], references: [id])
+  credits       Int      @default(3)
+  capacity      Int      @default(30)
+  enrolledCount Int      @default(0)
+  prerequisites Json?
+  status        CourseStatus @default(active)
+  academicYear  Int?
+  semester      Int?
+  syllabusUrl   String?  @db.Text
+  enrollments   Enrollment[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Enrollment {
+  id             Int       @id @default(autoincrement())
+  studentId      Int
+  student        Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  courseId       Int
+  course         Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  status         EnrollmentStatus @default(enrolled)
+  grade          String?
+  enrollmentDate DateTime  @default(now())
+  dropDate       DateTime?
+  academicYear   Int
+  semester       Int
+
+  @@unique([studentId, courseId, academicYear, semester])
+}
+
+model Notification {
+  id        Int       @id @default(autoincrement())
+  studentId Int
+  student   Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String    @db.Text
+  status    NotificationStatus @default(unread)
+  priority  NotificationPriority @default(medium)
+  metadata  Json?
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Document {
+  id          Int       @id @default(autoincrement())
+  studentId   Int
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  type        String
+  name        String
+  filePath    String    @db.Text
+  status      DocumentStatus @default(pending)
+  uploadedAt  DateTime  @default(now())
+  verifiedAt  DateTime?
+  verifiedBy  Int?
+}
+
+enum Role {
+  student
+  teacher
+  admin
+}
+
+enum UserStatus {
+  active
+  inactive
+  suspended
+}
+
+enum EnrollmentStatus {
+  pending
+  active
+  suspended
+  graduated
+  enrolled
+  dropped
+  completed
+  failed
+}
+
+enum CourseStatus {
+  active
+  inactive
+  full
+  cancelled
+}
+
+enum NotificationType {
+  enrollment_success
+  enrollment_failed
+  course_dropped
+  prerequisite_warning
+  capacity_alert
+  registration_update
+  document_status
+}
+
+enum NotificationStatus {
+  unread
+  read
+}
+
+enum NotificationPriority {
+  low
+  medium
+  high
+}
+
+enum DocumentStatus {
+  pending
+  approved
+  rejected
+}
