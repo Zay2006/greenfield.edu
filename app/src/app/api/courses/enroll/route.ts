@@ -23,7 +23,7 @@ export async function POST(req: Request) {
 
     // Get the student record
     const student = await prisma.student.findFirst({
-      where: { userId: session.user.id },
+      where: { id: Number(session.user.id) },
     });
 
     if (!student) {
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     const existingEnrollment = await prisma.enrollment.findFirst({
       where: {
         studentId: student.id,
-        courseId: courseId,
+        courseId: Number(courseId),
       },
     });
 
@@ -52,9 +52,11 @@ export async function POST(req: Request) {
     const enrollment = await prisma.enrollment.create({
       data: {
         studentId: student.id,
-        courseId: courseId,
-        status: 'ENROLLED',
+        courseId: Number(courseId),
+        status: "enrolled",
         enrollmentDate: new Date(),
+        academicYear: new Date().getFullYear(),
+        semester: Math.floor((new Date().getMonth() / 12) * 2) + 1 // 1 for Spring (Jan-Jun), 2 for Fall (Jul-Dec)
       },
     });
 

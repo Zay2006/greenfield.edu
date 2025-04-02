@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { PrismaClient } from '@prisma/client';
 
 export async function POST(req: Request) {
   try {
@@ -32,8 +31,8 @@ export async function POST(req: Request) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user and student in a transaction
-    const result = await prisma.$transaction(async (tx: PrismaClient) => {
-      const user = await tx.user.create({
+    const result = await prisma.$transaction(async (prisma) => {
+      const user = await prisma.user.create({
         data: {
           email,
           password: hashedPassword,
@@ -41,7 +40,7 @@ export async function POST(req: Request) {
         },
       });
 
-      const student = await tx.student.create({
+      const student = await prisma.student.create({
         data: {
           id: user.id,
           studentId,

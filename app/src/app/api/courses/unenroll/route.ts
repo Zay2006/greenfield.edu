@@ -23,7 +23,7 @@ export async function POST(req: Request) {
 
     // Get the student record
     const student = await prisma.student.findFirst({
-      where: { userId: session.user.id },
+      where: { id: Number(session.user.id) },
     });
 
     if (!student) {
